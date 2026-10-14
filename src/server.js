@@ -1030,6 +1030,8 @@ wss.on("connection", (socket, req) => {
             );
 
         } catch (e) {
+            console.error("Erreur traitement message WebSocket JJM :", e);
+
 
             socket.send(
                 JSON.stringify({
