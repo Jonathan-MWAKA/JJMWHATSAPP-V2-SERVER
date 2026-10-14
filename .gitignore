@@ -1,0 +1,9 @@
+.env
+node_modules/
+data/users.json
+data/messages.json
+npm-debug.log*
+*.backup*
+
+sauvegardes/
+*.backup-*

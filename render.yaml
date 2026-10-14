@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: jjmwhatsapp-v2-server
+    runtime: node
+    buildCommand: npm install
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JJM_JWT_SECRET
+        sync: false
