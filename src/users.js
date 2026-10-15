@@ -232,6 +232,18 @@ function verifierCodeVerification(numero, code) {
 }
 
 
+function listerUtilisateursJJM(identifiantExclu) {
+    return chargerUtilisateurs()
+        .filter(utilisateur =>
+            utilisateur.identifiant !== identifiantExclu
+        )
+        .map(utilisateur => ({
+            identifiant: utilisateur.identifiant,
+            nom: utilisateur.nom,
+            numero: utilisateur.numero
+        }));
+}
+
 function rechercherUtilisateursJJM(terme, identifiantExclu) {
     const recherche = String(terme || "").trim().toLocaleLowerCase("fr");
     const chiffres = recherche.replace(/\D/g, "");
@@ -281,6 +293,7 @@ function trouverUtilisateurParIdentifiant(identifiant) {
 }
 
 module.exports = {
+    listerUtilisateursJJM,
     rechercherUtilisateursJJM,
     creerUtilisateur,
     verifierConnexion,

@@ -536,6 +536,35 @@ app.get("/api/me", authentifierJJM, (req, res) => {
 });
 
 app.get(
+    "/api/utilisateurs-inscrits",
+    authentifierJJM,
+    (req, res) => {
+        const users = require("./users");
+
+        const utilisateurs = users.listerUtilisateursJJM(
+            req.utilisateurJJM.identifiant
+        ).map(utilisateur => {
+            const socket = connexionsJJM.get(
+                utilisateur.identifiant
+            );
+
+            return {
+                ...utilisateur,
+                enLigne: !!(
+                    socket &&
+                    socket.readyState === WebSocket.OPEN
+                )
+            };
+        });
+
+        res.json({
+            ok: true,
+            utilisateurs
+        });
+    }
+);
+
+app.get(
     "/api/rechercher-utilisateurs",
     authentifierJJM,
     (req, res) => {
