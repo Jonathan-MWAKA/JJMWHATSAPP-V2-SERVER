@@ -231,6 +231,30 @@ function verifierCodeVerification(numero, code) {
     return true;
 }
 
+
+function rechercherUtilisateursJJM(terme, identifiantExclu) {
+    const recherche = String(terme || "").trim().toLocaleLowerCase("fr");
+    const chiffres = recherche.replace(/\D/g, "");
+
+    if (recherche.length < 2) {
+        return [];
+    }
+
+    const utilisateurs = chargerUtilisateurs();
+
+    return utilisateurs.filter(utilisateur => {
+        if (utilisateur.identifiant === identifiantExclu) {
+            return false;
+        }
+
+        const nom = String(utilisateur.nom || "").toLocaleLowerCase("fr");
+        const numero = String(utilisateur.numero || "").replace(/\D/g, "");
+
+        return nom.includes(recherche) ||
+            (chiffres.length >= 2 && numero.includes(chiffres));
+    }).slice(0, 30);
+}
+
 function trouverUtilisateurParNumero(numero) {
 
     const numeroNormalise =
@@ -257,6 +281,7 @@ function trouverUtilisateurParIdentifiant(identifiant) {
 }
 
 module.exports = {
+    rechercherUtilisateursJJM,
     creerUtilisateur,
     verifierConnexion,
     trouverUtilisateurParNumero,

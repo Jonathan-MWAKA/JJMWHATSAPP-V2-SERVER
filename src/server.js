@@ -536,6 +536,36 @@ app.get("/api/me", authentifierJJM, (req, res) => {
 });
 
 app.get(
+    "/api/rechercher-utilisateurs",
+    authentifierJJM,
+    (req, res) => {
+        const terme = String(req.query.q || "").trim();
+
+        if (terme.length < 2) {
+            return res.json({
+                ok: true,
+                utilisateurs: []
+            });
+        }
+
+        const users = require("./users");
+        const resultats = users.rechercherUtilisateursJJM(
+            terme,
+            req.utilisateurJJM.identifiant
+        );
+
+        res.json({
+            ok: true,
+            utilisateurs: resultats.map(utilisateur => ({
+                identifiant: utilisateur.identifiant,
+                nom: utilisateur.nom,
+                numero: utilisateur.numero
+            }))
+        });
+    }
+);
+
+app.get(
     "/api/utilisateur-par-numero",
     authentifierJJM,
     (req, res) => {
