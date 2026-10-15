@@ -1047,9 +1047,10 @@ wss.on("connection", (socket, req) => {
             ) {
 
                 connexionDestinataire.send(
-                    JSON.stringify(
-                        messageJJM
-                    )
+                    JSON.stringify({
+                        type: "nouveau_message",
+                        ...messageJJM
+                    })
                 );
 
                 console.log(
