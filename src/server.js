@@ -6,6 +6,8 @@ const cors = require("cors");
 const http = require("http");
 const WebSocket = require("ws");
 const jwt = require("jsonwebtoken");
+const { initialiserSchema } = require("./schema");
+const { verifierConnexionPostgres } = require("./database");
 
 const {
     creerUtilisateur,
@@ -175,7 +177,7 @@ app.post(
             }
 
             const utilisateur =
-                trouverUtilisateurParNumero(
+                await trouverUtilisateurParNumero(
                     numero
                 );
 
@@ -217,7 +219,7 @@ app.post(
     }
 );
 
-app.post("/api/verifier-code", limiteVerificationCode, (req, res) => {
+app.post("/api/verifier-code", limiteVerificationCode, async (req, res) => {
 
     try {
 
@@ -240,7 +242,7 @@ app.post("/api/verifier-code", limiteVerificationCode, (req, res) => {
         }
 
         const utilisateur =
-            trouverUtilisateurParNumero(
+            await trouverUtilisateurParNumero(
                 numero
             );
 
@@ -508,10 +510,10 @@ function authentifierJJM(req, res, next) {
     }
 }
 
-app.get("/api/me", authentifierJJM, (req, res) => {
+app.get("/api/me", authentifierJJM, async (req, res) => {
 
     const utilisateur =
-        trouverUtilisateurParIdentifiant(
+        await trouverUtilisateurParIdentifiant(
             req.utilisateurJJM.identifiant
         );
 
@@ -538,12 +540,12 @@ app.get("/api/me", authentifierJJM, (req, res) => {
 app.get(
     "/api/utilisateurs-inscrits",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
         const users = require("./users");
 
-        const utilisateurs = users.listerUtilisateursJJM(
+        const utilisateurs = (await users.listerUtilisateursJJM(
             req.utilisateurJJM.identifiant
-        ).map(utilisateur => {
+        )).map(utilisateur => {
             const socket = connexionsJJM.get(
                 utilisateur.identifiant
             );
@@ -567,7 +569,7 @@ app.get(
 app.get(
     "/api/rechercher-utilisateurs",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
         const terme = String(req.query.q || "").trim();
 
         if (terme.length < 2) {
@@ -578,7 +580,7 @@ app.get(
         }
 
         const users = require("./users");
-        const resultats = users.rechercherUtilisateursJJM(
+        const resultats = await users.rechercherUtilisateursJJM(
             terme,
             req.utilisateurJJM.identifiant
         );
@@ -597,7 +599,7 @@ app.get(
 app.get(
     "/api/utilisateur-par-numero",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
 
         const numero =
             String(
@@ -613,7 +615,7 @@ app.get(
         }
 
         const utilisateur =
-            require("./users")
+            await require("./users")
                 .trouverUtilisateurParNumero(
                     numero
                 );
@@ -643,7 +645,7 @@ app.get(
 app.post(
     "/api/utilisateurs-par-numeros",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
 
         const numeros =
             Array.isArray(req.body.numeros)
@@ -672,7 +674,7 @@ app.post(
         for (const numero of numeros) {
 
             const utilisateur =
-                users.trouverUtilisateurParNumero(
+                await users.trouverUtilisateurParNumero(
                     numero
                 );
 
@@ -737,7 +739,7 @@ app.post(
 app.post(
     "/api/historique-conversation",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
 
         const autreUtilisateur =
             String(
@@ -752,7 +754,7 @@ app.post(
         }
 
         const messages =
-            chargerMessages();
+            await chargerMessages();
 
         const identifiantConnecte = req.utilisateurJJM.identifiant;
 
@@ -786,10 +788,10 @@ app.post(
 app.get(
     "/api/messages-hors-ligne",
     authentifierJJM,
-    (req, res) => {
+    async (req, res) => {
 
         const messages =
-            messagesPourUtilisateur(
+            await messagesPourUtilisateur(
                 req.utilisateurJJM.identifiant
             );
 
@@ -819,7 +821,7 @@ const wss = new WebSocket.Server({
     maxPayload: 16 * 1024
 });
 
-wss.on("connection", (socket, req) => {
+wss.on("connection", async (socket, req) => {
 
     const autorisation =
         String(req.headers.authorization || "");
@@ -885,7 +887,7 @@ wss.on("connection", (socket, req) => {
         );
 
         const messagesEnAttente =
-            messagesPourUtilisateur(
+            await messagesPourUtilisateur(
                 contenu.identifiant
             );
 
@@ -906,7 +908,7 @@ wss.on("connection", (socket, req) => {
         ) {
 
             const nombreLivres =
-                marquerCommeLivre(
+                await marquerCommeLivre(
                     contenu.identifiant
                 );
 
@@ -927,7 +929,7 @@ wss.on("connection", (socket, req) => {
         return;
     }
 
-    socket.on("message", (donnees) => {
+    socket.on("message", async (donnees) => {
 
         try {
 
@@ -989,7 +991,7 @@ wss.on("connection", (socket, req) => {
                 return;
             }
 
-            if (!trouverUtilisateurParIdentifiant(destinataire)) {
+            if (!await trouverUtilisateurParIdentifiant(destinataire)) {
                 socket.send(
                     JSON.stringify({
                         type: "erreur",
@@ -1038,7 +1040,7 @@ wss.on("connection", (socket, req) => {
             messageJJM.livre =
                 destinataireEnLigne;
 
-            ajouterMessage(
+            await ajouterMessage(
                 messageJJM
             );
 
@@ -1139,13 +1141,28 @@ wss.on("connection", (socket, req) => {
     });
 });
 
-serveur.listen(PORT, "0.0.0.0", () => {
+async function demarrerServeur() {
+    await verifierConnexionPostgres();
+    console.log("Connexion PostgreSQL vérifiée.");
 
-    console.log(
-        `Serveur JJMWHATSAPP V2 démarré sur le port ${PORT}`
-    );
+    await initialiserSchema();
+    console.log("Schéma PostgreSQL initialisé.");
 
-    console.log(
-        `http://127.0.0.1:${PORT}/health`
+    serveur.listen(PORT, "0.0.0.0", () => {
+        console.log(
+            `Serveur JJMWHATSAPP V2 démarré sur le port ${PORT}`
+        );
+
+        console.log(
+            `http://127.0.0.1:${PORT}/health`
+        );
+    });
+}
+
+demarrerServeur().catch((erreur) => {
+    console.error(
+        "Échec de l'initialisation du serveur :",
+        erreur.message
     );
+    process.exit(1);
 });
